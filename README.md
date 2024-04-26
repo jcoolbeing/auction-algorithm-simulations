@@ -16,5 +16,6 @@ The body of my research is in my dissertation which is located in pdf format in 
   4. click start auction (sometimes you need to click start auction twice to set and reset)
 
 Analysis:
+
 While the auction is simulating you are presented with the bidders information (max-bid, bidding style),
 bidding status, and the live bidding history.
