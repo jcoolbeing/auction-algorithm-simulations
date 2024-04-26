@@ -10,10 +10,11 @@ The body of my research is in my dissertation which is located in pdf format in 
   I started out with simple logic that has a set amount of bidders bid for a set amount of time and the highest bidder ends up being victorious.  I wanted to get as close to replicating real life scenarios so therefore I implemented a value system.  This value system is assigned to the bidder as well as the item and the closer the two values are to one another the higher the bidders desire is to bid.  I also added bidder strategy and styles to the algorithm in order to have the bidders decide on how aggresive they bid how and likely they are to exceed their desired max-bid. The goal was to get as close to real life as I could considering that people are not always rational.
 
   How to run:
-  1. cd into the directory
-  2. enter npm start to run the program
-  3. set parameters - # of bidders, Starting bid,Bid increments
-  4. click start auction (sometimes you need to click start auction twice to set and reset)
+  1. clone into repository
+  2. cd into the directory src
+  3. enter npm start to run the program
+  4. set parameters - # of bidders, Starting bid,Bid increments
+  5. click start auction (sometimes you need to click start auction twice to set and reset)
 
 Analysis:
 
