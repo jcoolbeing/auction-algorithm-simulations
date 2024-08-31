@@ -97,11 +97,20 @@
         <!-- Educational Feedback Section -->
         <h3>Educational Feedback:</h3>
         <p id="feedback" class="alert alert-info"></p>
+
+        <!-- Chart.js Chart -->
+        <h3>Bids Overview</h3>
+        <canvas id="bidsChart"></canvas> <!-- This is where the chart will be rendered -->
     </div>
 </div>
 
+<!-- Include Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <!-- JavaScript for Dynamic Form Updates and Auction Simulation -->
 <script>
+    let auctionChart; // Declare a variable to hold the chart instance
+
     // Update Bidding Styles Based on Number of Bidders
     document.getElementById('num_bidders').addEventListener('input', updateBiddingStyles);
 
@@ -126,8 +135,8 @@
         }
     }
 
-    // Function to Simulate English Auction
-    function simulateEnglishAuction() {
+    // Function to Simulate English Auction with Delay
+    async function simulateEnglishAuction() {
         const numBidders = document.getElementById('num_bidders').value;
         const duration = document.getElementById('duration').value;
         const reservePrice = document.getElementById('reserve_price').value;
@@ -138,7 +147,7 @@
             biddingStyles.push(style);
         }
 
-        fetch('/simulate-auction', {
+        const response = await fetch('/simulate-auction', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -150,11 +159,18 @@
                 reserve_price: reservePrice,
                 bidding_styles: biddingStyles,
             }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            displayResults(data);
         });
+        const data = await response.json();
+
+        // Delay loop for each round
+        for (let i = 0; i < data.rounds; i++) {
+            // Update the results and chart for each round
+            displayResults(data);
+            displayChart(data.bidders);
+
+            // Add delay 
+            await new Promise(resolve => setTimeout(resolve, 100000000000));
+        }
     }
 
     // Function to Simulate Dutch Auction
@@ -180,6 +196,7 @@
         .then(response => response.json())
         .then(data => {
             displayResults(data);
+            displayChart(data.bidders); // Display the chart after simulation
         });
     }
 
@@ -200,6 +217,7 @@
         .then(response => response.json())
         .then(data => {
             displayResults(data);
+            displayChart(data.bidders); // Display the chart after simulation
         });
     }
 
@@ -222,5 +240,40 @@
             allBiddersList.appendChild(li);
         }
     }
+
+    // Function to Display Bids Overview Chart
+    function displayChart(bidders) {
+        const ctx = document.getElementById('bidsChart').getContext('2d');
+        const labels = Object.keys(bidders);
+        const data = Object.values(bidders);
+
+        // Destroy previous chart if it exists
+        if (auctionChart) {
+            auctionChart.destroy();
+        }
+
+        // Create a new chart
+        auctionChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Bid Amount',
+                    data: data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
 </script>
 {% endblock %}
+
