@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}{{ auction_type.capitalize() }} Auction Simulation{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Page Title -->
+    <h1 class="text-center">{{ auction_type.capitalize() }} Auction Simulation</h1>
+
+    <!-- Form to Set Auction Parameters -->
+    <h2 class="mt-4">Set Auction Parameters</h2>
+    <form id="simulation-form">
+        <!-- Number of Bidders Input -->
+        <div class="row mb-3">
+            <label for="num_bidders" class="col-sm-2 col-form-label">Number of Bidders:</label>
+            <div class="col-sm-10">
+                <input type="number" id="num_bidders" name="num_bidders" class="form-control" required>
+            </div>
+        </div>
+
+        {% if auction_type == 'english' %}
+            <!-- Duration Input for English Auction -->
+            <div class="row mb-3">
+                <label for="duration" class="col-sm-2 col-form-label">Duration (in rounds):</label>
+                <div class="col-sm-10">
+                    <input type="number" id="duration" name="duration" class="form-control" required>
+                </div>
+            </div>
+
+            <!-- Reserve Price Input for English Auction -->
+            <div class="row mb-3">
+                <label for="reserve_price" class="col-sm-2 col-form-label">Reserve Price:</label>
+                <div class="col-sm-10">
+                    <input type="number" id="reserve_price" name="reserve_price" class="form-control">
+                </div>
+            </div>
+
+            <!-- Bidding Styles for Each Bidder -->
+            <h3>Bidding Styles</h3>
+            <p>Set bidding style for each bidder (aggressive, conservative, random):</p>
+            <div id="bidding-styles" class="mb-3"></div>
+
+            <!-- Simulate Auction Button for English Auction -->
+            <button type="button" class="btn btn-primary" onclick="simulateEnglishAuction()">Simulate Auction</button>
+
+        {% elif auction_type == 'dutch' %}
+            <!-- Start Price Input for Dutch Auction -->
+            <div class="row mb-3">
+                <label for="start_price" class="col-sm-2 col-form-label">Start Price:</label>
+                <div class="col-sm-10">
+                    <input type="number" id="start_price" name="start_price" class="form-control" required>
+                </div>
+            </div>
+
+            <!-- Price Decrement Input for Dutch Auction -->
+            <div class="row mb-3">
+                <label for="decrement" class="col-sm-2 col-form-label">Price Decrement:</label>
+                <div class="col-sm-10">
+                    <input type="number" id="decrement" name="decrement" class="form-control" required>
+                </div>
+            </div>
+
+            <!-- Minimum Price Input for Dutch Auction -->
+            <div class="row mb-3">
+                <label for="min_price" class="col-sm-2 col-form-label">Minimum Price:</label>
+                <div class="col-sm-10">
+                    <input type="number" id="min_price" name="min_price" class="form-control" required>
+                </div>
+            </div>
+
+            <!-- Simulate Auction Button for Dutch Auction -->
+            <button type="button" class="btn btn-primary" onclick="simulateDutchAuction()">Simulate Auction</button>
+
+        {% elif auction_type == 'vickrey' %}
+            <!-- Simulate Auction Button for Vickrey Auction -->
+            <button type="button" class="btn btn-primary" onclick="simulateVickreyAuction()">Simulate Auction</button>
+        {% endif %}
+    </form>
+
+    <!-- Simulation Results Section -->
+    <div id="simulation-result" class="mt-4" style="display:none;">
+        <h2>Auction Result</h2>
+        <p><strong>Winning Bidder:</strong> <span id="winning-bidder"></span></p>
+        <p><strong>Winning Bid:</strong> $<span id="winning-bid"></span></p>
+
+        <!-- List of All Bidders and Their Bids -->
+        <h3>All Bidders:</h3>
+        <ul id="all-bidders" class="list-group"></ul>
+
+        <!-- Final Price and Number of Rounds -->
+        <h3>Final Price:</h3>
+        <p id="final-price"></p>
+
+        <h3>Number of Rounds:</h3>
+        <p id="rounds"></p>
+
+        <!-- Educational Feedback Section -->
+        <h3>Educational Feedback:</h3>
+        <p id="feedback" class="alert alert-info"></p>
+    </div>
+</div>
+
+<!-- JavaScript for Dynamic Form Updates and Auction Simulation -->
+<script>
+    // Update Bidding Styles Based on Number of Bidders
+    document.getElementById('num_bidders').addEventListener('input', updateBiddingStyles);
+
+    function updateBiddingStyles() {
+        const numBidders = document.getElementById('num_bidders').value;
+        const biddingStylesDiv = document.getElementById('bidding-styles');
+        biddingStylesDiv.innerHTML = '';
+
+        for (let i = 1; i <= numBidders; i++) {
+            biddingStylesDiv.innerHTML += `
+                <div class="row mb-3">
+                    <label for="bidder_${i}_style" class="col-sm-2 col-form-label">Bidder ${i} Style:</label>
+                    <div class="col-sm-10">
+                        <select id="bidder_${i}_style" name="bidder_${i}_style" class="form-select" required>
+                            <option value="aggressive">Aggressive</option>
+                            <option value="conservative">Conservative</option>
+                            <option value="random">Random</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    // Function to Simulate English Auction
+    function simulateEnglishAuction() {
+        const numBidders = document.getElementById('num_bidders').value;
+        const duration = document.getElementById('duration').value;
+        const reservePrice = document.getElementById('reserve_price').value;
+        const biddingStyles = [];
+
+        for (let i = 1; i <= numBidders; i++) {
+            const style = document.getElementById(`bidder_${i}_style`).value;
+            biddingStyles.push(style);
+        }
+
+        fetch('/simulate-auction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                auction_type: 'english',
+                num_bidders: numBidders,
+                duration: duration,
+                reserve_price: reservePrice,
+                bidding_styles: biddingStyles,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayResults(data);
+        });
+    }
+
+    // Function to Simulate Dutch Auction
+    function simulateDutchAuction() {
+        const numBidders = document.getElementById('num_bidders').value;
+        const startPrice = document.getElementById('start_price').value;
+        const decrement = document.getElementById('decrement').value;
+        const minPrice = document.getElementById('min_price').value;
+
+        fetch('/simulate-auction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                auction_type: 'dutch',
+                num_bidders: numBidders,
+                start_price: startPrice,
+                decrement: decrement,
+                min_price: minPrice,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayResults(data);
+        });
+    }
+
+    // Function to Simulate Vickrey Auction
+    function simulateVickreyAuction() {
+        const numBidders = document.getElementById('num_bidders').value;
+
+        fetch('/simulate-auction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                auction_type: 'vickrey',
+                num_bidders: numBidders,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayResults(data);
+        });
+    }
+
+    // Function to Display Auction Results
+    function displayResults(data) {
+        document.getElementById('simulation-result').style.display = 'block';
+        document.getElementById('winning-bidder').innerText = data.winning_bidder;
+        document.getElementById('winning-bid').innerText = data.winning_bid;
+        document.getElementById('final-price').innerText = data.final_price || 'N/A';
+        document.getElementById('rounds').innerText = data.rounds || '1';
+        document.getElementById('feedback').innerText = data.feedback;
+
+        const allBiddersList = document.getElementById('all-bidders');
+        allBiddersList.innerHTML = '';
+
+        for (const bidder in data.bidders) {
+            const li = document.createElement('li');
+            li.classList.add('list-group-item');
+            li.innerText = `${bidder}: $${data.bidders[bidder]}`;
+            allBiddersList.appendChild(li);
+        }
+    }
+</script>
+{% endblock %}

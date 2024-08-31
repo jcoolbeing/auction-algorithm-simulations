@@ -2,19 +2,16 @@
 This repository is for my 4th year assignment.
 
 Name: Jonathan Board
-Supervisor: Ian McLoughlin
 
 My 4th year project is a research based project rather than a traditional one.  I chose to dive deep into the world of auctions and the algorithms that lay underneath them. 
-The body of my research is in my dissertation which is located in pdf format in this repo.  Going along with my dissertation I have a auction simulator created using Javascript.  Initialy my plan was to use Javascript for the frontend and Python(Flask) for the backend which I did but due to massive errors and time restraints I took opted to scrapping this.  Never the less I learned alot working with python as well as flask.  Considering that the logic is the primary part to these algorithms Javascript was just fine.
-
-  I started out with simple logic that has a set amount of bidders bid for a set amount of time and the highest bidder ends up being victorious.  I wanted to get as close to replicating real life scenarios so therefore I implemented a value system.  This value system is assigned to the bidder as well as the item and the closer the two values are to one another the higher the bidders desire is to bid.  I also added bidder strategy and styles to the algorithm in order to have the bidders decide on how aggresive they bid how and likely they are to exceed their desired max-bid. The goal was to get as close to real life as I could considering that people are not always rational.
+The body of my research is in my dissertation which is located in pdf format in this repo.  Going along with my dissertation I have a auction simulator created using Python, Jinja2, and Bootstrap.  
 
   How to run:
-  1. clone into repository
-  2. cd into the directory src
-  3. enter npm start to run the program
-  4. set parameters - # of bidders, Starting bid,Bid increments
-  5. click start auction (sometimes you need to click start auction twice to set and reset)
+  1. clone into repository via console
+  2. cd into the directory src auction-algorithm-simulations\auction_sim
+  3. enter flask run to start the program
+  4. In the console it should display a location where the server is running on.(usually this is http://127.0.0.1:5000 but you can just enter via console link)
+  5. The main menu should pop up in browser. If not then open your web browser and manually enter the location link that is shown in your console.
 
 Analysis:
 
