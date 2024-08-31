@@ -1,44 +1,49 @@
 import random
 
 def simulate_english_auction(num_bidders, duration, reserve_price, bidding_styles):
+    # Initialize bidders with their respective bidding styles
     bidders = {f"Bidder {i+1}": 0 for i in range(num_bidders)}
-    highest_bid = reserve_price if reserve_price else 0
-    history = []
+    
+    # Process the bidding styles as a list
+    bidding_styles_dict = {f"Bidder {i+1}": bidding_styles[i] for i in range(num_bidders)}
+    
+    # Variable to keep track of the final price
+    final_price = 0
 
-    for round_num in range(1, duration + 1):
-        round_bids = {}
-        for bidder, style in bidding_styles.items():
-            if style == "aggressive":
-                bid = highest_bid + random.randint(10, 100)
-            elif style == "conservative":
-                bid = highest_bid + random.randint(1, 10)
-            else:  # random
-                bid = highest_bid + random.randint(5, 50)
+    for round_number in range(1, duration + 1):
+        for bidder, style in bidding_styles_dict.items():
+            # Example bidding logic based on style
+            if style == 'aggressive':
+                bid = random.randint(50, 100)
+            elif style == 'conservative':
+                bid = random.randint(10, 50)
+            else:  # Random
+                bid = random.randint(20, 70)
 
-            if random.random() > 0.1:  # 10% chance to drop out
-                if bid > highest_bid:
-                    highest_bid = bid
-                    bidders[bidder] = highest_bid
-                    round_bids[bidder] = bid
-                else:
-                    round_bids[bidder] = 0  # Did not outbid the highest bid
-            else:
-                round_bids[bidder] = 0  # Dropped out
+            bidders[bidder] += bid
 
-        history.append({'round': round_num, 'bids': round_bids})
-
+            # Update the final price with the highest bid so far
+            if bidders[bidder] > final_price:
+                final_price = bidders[bidder]
+            
+            # Check if the reserve price is met
+            if reserve_price and bidders[bidder] >= reserve_price:
+                return {
+                    'winning_bidder': bidder,
+                    'winning_bid': bidders[bidder],
+                    'final_price': bidders[bidder],
+                    'rounds': round_number,
+                    'bidders': bidders,
+                    'feedback': f'{bidder} met the reserve price in round {round_number}.'
+                }
+    
+    # Find the highest bid after all rounds if no one met the reserve price
     winning_bidder = max(bidders, key=bidders.get)
-    winning_bid = bidders[winning_bidder]
-
-    feedback = f"The winning bidder was {winning_bidder} with a bid of ${winning_bid}."
-    if reserve_price and winning_bid < reserve_price:
-        feedback += f" The reserve price of ${reserve_price} was not met, so the item would not have been sold in a real auction."
-    feedback += f" Bidding strategies significantly impacted the outcome, with {winning_bidder} using a {bidding_styles[winning_bidder]} strategy."
-
     return {
         'winning_bidder': winning_bidder,
-        'winning_bid': winning_bid,
+        'winning_bid': bidders[winning_bidder],
+        'final_price': final_price if final_price > 0 else 'N/A',
+        'rounds': duration,
         'bidders': bidders,
-        'history': history,
-        'feedback': feedback
+        'feedback': f'No bidder met the reserve price. {winning_bidder} had the highest bid.'
     }
