@@ -106,11 +106,9 @@
         <h3>Bid Progress</h3>
         <canvas id="bidProgressChart"></canvas> <!-- This is where the line chart will be rendered -->
 
-        <!-- Bidder Behavior Pie Chart (only for English) -->
-        {% if auction_type == 'english' %}
-            <h3>Bidding Styles Distribution</h3>
-            <canvas id="biddingStylesChart"></canvas> <!-- This is where the pie chart will be rendered -->
-        {% endif %}
+        <!-- Bidder Behavior Pie Chart -->
+        <h3>Bidding Styles Distribution</h3>
+        <canvas id="biddingStylesChart"></canvas> <!-- This is where the pie chart will be rendered -->
 
         <!-- Auction Outcome Summary -->
         <h3>Auction Outcome Summary</h3>
@@ -130,7 +128,123 @@
 <script>
     let auctionChart; // Declare a variable to hold the bar chart instance
     let bidProgressChart; // Declare a variable to hold the line chart instance
+    let biddingStylesChart; // Declare a variable to hold the pie chart instance
     let bidProgressData = []; // Array to store bid data for the line chart
+
+    // Update Bidding Styles Based on Number of Bidders
+    document.getElementById('num_bidders').addEventListener('input', updateBiddingStyles);
+
+    function updateBiddingStyles() {
+        const numBidders = document.getElementById('num_bidders').value;
+        const biddingStylesDiv = document.getElementById('bidding-styles');
+        biddingStylesDiv.innerHTML = '';
+
+        for (let i = 1; i <= numBidders; i++) {
+            biddingStylesDiv.innerHTML += `
+                <div class="row mb-3">
+                    <label for="bidder_${i}_style" class="col-sm-2 col-form-label">Bidder ${i} Style:</label>
+                    <div class="col-sm-10">
+                        <select id="bidder_${i}_style" name="bidder_${i}_style" class="form-select" required>
+                            <option value="aggressive">Aggressive</option>
+                            <option value="conservative">Conservative</option>
+                            <option value="random">Random</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    // Function to Simulate English Auction with Delay
+    async function simulateEnglishAuction() {
+        const numBidders = document.getElementById('num_bidders').value;
+        const duration = document.getElementById('duration').value;
+        const reservePrice = document.getElementById('reserve_price').value;
+        const biddingStyles = [];
+
+        for (let i = 1; i <= numBidders; i++) {
+            const style = document.getElementById(`bidder_${i}_style`).value;
+            biddingStyles.push(style);
+        }
+
+        const response = await fetch('/simulate-auction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                auction_type: 'english',
+                num_bidders: numBidders,
+                duration: duration,
+                reserve_price: reservePrice,
+                bidding_styles: biddingStyles,
+            }),
+        });
+        const data = await response.json();
+
+        // Reset the bid progress data
+        bidProgressData = [];
+
+        // Delay loop for each round
+        for (let i = 0; i < data.rounds; i++) {
+            // Update the results and chart for each round
+            displayResults(data);
+            displayChart(data.bidders); // Ensure the Bids Overview chart is displayed
+            updateBidProgressChart(data.bidders, i + 1); // Update the line chart with round data
+
+            // Add delay (e.g., 1 second)
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        // Display the bidding styles pie chart
+        displayBiddingStylesChart(biddingStyles);
+
+        // Display the auction outcome summary
+        displayAuctionSummary(data);
+    }
+
+    // Function to Simulate Dutch Auction with Delay
+    async function simulateDutchAuction() {
+        const numBidders = document.getElementById('num_bidders').value;
+        const startPrice = document.getElementById('start_price').value;
+        const decrement = document.getElementById('decrement').value;
+        const minPrice = document.getElementById('min_price').value;
+
+        const response = await fetch('/simulate-auction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                auction_type: 'dutch',
+                num_bidders: numBidders,
+                start_price: startPrice,
+                decrement: decrement,
+                min_price: minPrice,
+            }),
+        });
+        const data = await response.json();
+
+        // Reset the bid progress data
+        bidProgressData = [];
+
+        // Delay loop for each round (here, rounds can be considered as each decrement step)
+        for (let i = 0; i < data.rounds; i++) {
+            // Update the results and chart for each decrement
+            displayResults(data);
+            displayChart(data.bidders); // Ensure the Bids Overview chart is displayed
+            updateBidProgressChart(data.bidders, i + 1); // Update the line chart with round data
+
+            // Add delay (e.g., 1 second)
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        // Display the bidding styles pie chart
+        displayBiddingStylesChart([]); // Since Dutch Auction might not use styles, pass an empty array
+
+        // Display the auction outcome summary
+        displayAuctionSummary(data);
+    }
 
     // Function to Simulate Vickrey Auction
     function simulateVickreyAuction() {
@@ -150,8 +264,6 @@
         .then(data => {
             displayResults(data);
             displayChart(data.bidders); // Display the chart after simulation
-            updateBidProgressChart(data.bidders); // Update the bid progress chart
-            displayAuctionSummary(data); // Display auction summary
         });
     }
 
@@ -210,9 +322,9 @@
     }
 
     // Function to Update Bid Progress Line Chart
-    function updateBidProgressChart(bidders) {
+    function updateBidProgressChart(bidders, round) {
         const highestBid = Math.max(...Object.values(bidders));
-        bidProgressData.push({ x: bidProgressData.length + 1, y: highestBid });
+        bidProgressData.push({ x: round, y: highestBid });
 
         // Destroy previous chart if it exists
         if (bidProgressChart) {
@@ -248,6 +360,37 @@
                         }
                     }
                 }
+            }
+        });
+    }
+
+    // Function to Display Bidding Styles Pie Chart
+    function displayBiddingStylesChart(biddingStyles) {
+        const styleCounts = biddingStyles.reduce((acc, style) => {
+            acc[style] = (acc[style] || 0) + 1;
+            return acc;
+        }, {});
+
+        const ctx = document.getElementById('biddingStylesChart').getContext('2d');
+
+        // Destroy previous chart if it exists
+        if (biddingStylesChart) {
+            biddingStylesChart.destroy();
+        }
+
+        biddingStylesChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(styleCounts),
+                datasets: [{
+                    data: Object.values(styleCounts),
+                    backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(255, 206, 86, 0.2)', 'rgba(153, 102, 255, 0.2)'],
+                    borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 206, 86, 1)', 'rgba(153, 102, 255, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true
             }
         });
     }
